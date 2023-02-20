@@ -16,5 +16,8 @@
   "bugs": {
     "url": "https://github.com/bootonk/tinyapp/issues"
   },
-  "homepage": "https://github.com/bootonk/tinyapp#readme"
+  "homepage": "https://github.com/bootonk/tinyapp#readme",
+  "dependencies": {
+    "express": "^4.18.2"
+  }
 }
