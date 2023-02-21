@@ -45,3 +45,14 @@ app.get("/urls/:id", (req, res) => {
   const templateVars = { id: req.params.id, longURL: urlDatabase[req.params.id]}
   res.render("urls_show", templateVars);
 });
+
+function generateRandomString() {
+  let id = '';
+  const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  
+  for (let i = 0; i <= 6; i++) {
+    id += characters.charAt(Math.floor(Math.random() * characters.length));
+  }
+
+  return id;
+};
