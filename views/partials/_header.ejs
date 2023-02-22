@@ -19,24 +19,16 @@
       </div>
     </div>
     <div>
-    <% if (users[user_id]) { %> 
+    <% if (user) { %> 
     <form class="form-inline" method="POST" action="/logout">
         <div class="form-group mb-2">
-          <div style="margin-right: 20px">Logged in with <%= users[user_id].email %></div> 
+          <div style="margin-right: 20px">Logged in with <%= user.email %></div> 
           <button type="submit" class="btn btn-outline-dark">Logout</button>
         </div>
         </form>
     <% } else { %>
-        <form class="form-inline" method="POST" action="/login">
-          <input
-            class="form-control"
-            type="text"
-            placeholder="Add username here"
-            name="username"
-            style="margin-right: 20px"
-          />
-          <button type="submit" class="btn btn-outline-dark">Sign in</button>
-        </form>
+        <a href="/login" class="btn btn-outline-dark">Sign in</a>
+        <a href="/register" class="btn btn-outline-dark">Register</a>
     <% } %>
     </div>
   </nav>
