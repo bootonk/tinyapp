@@ -3,7 +3,6 @@ const cookieParser = require("cookie-parser");
 const app = express();
 const PORT = 8080; // default port 8080
 
-
 app.set('view engine', 'ejs');
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
@@ -21,7 +20,7 @@ const users = {
   },
 };
 
-function generateRandomString() {
+const generateRandomString = function() {
   let id = '';
   const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
   
@@ -32,12 +31,21 @@ function generateRandomString() {
   return id;
 };
 
+const getUserByEmail = function(usersObj, submittedEmail) {
+  let foundEmail = null;
+
+  for (let userID in usersObj) {
+    const email = users[userID].email;
+    if (email === submittedEmail) {
+      foundEmail = email;
+    }
+  }
+
+  return foundEmail;
+}
+
 app.get("/", (req, res) => {
   res.send("Hello!");
-});
-
-app.listen(PORT, () => {
-  console.log(`Example app listening on port ${PORT}!`);
 });
 
 app.get("/urls.json", (req, res) => {
@@ -100,7 +108,6 @@ app.get("/u/:id", (req, res) => {
 app.post("/login", (req, res) => {
   res.cookie('username', req.body.username);
   res.redirect("/urls");
-  // console.log('cookies:', req.cookies.username);
 });
 
 app.post("/logout", (req, res) => {
@@ -113,10 +120,19 @@ app.get("/register", (req, res) => {
     user_id: req.cookies["user_id"],
     users: users
   }
-  res.render("registration", templateVars)
+  res.render("registration", templateVars, console.log(templateVars))
 });
 
 app.post("/register", (req, res) => {
+  if (!req.body.email.length || !req.body.password.length) {
+    return res.status(400).send('Please provide email and password');
+  }
+
+  let foundEmail = getUserByEmail(users, req.body.email);
+  if(foundEmail) {
+    return res.status(400).send(`${foundEmail} has already been registered`);
+  }
+
   const id = generateRandomString();
   users[id] = {
     id,
@@ -125,4 +141,8 @@ app.post("/register", (req, res) => {
   }
   res.cookie('user_id', id);
   res.redirect("/urls");
+});
+
+app.listen(PORT, () => {
+  console.log(`Example app listening on port ${PORT}!`);
 });
