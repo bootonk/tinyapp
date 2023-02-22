@@ -16,7 +16,7 @@ const users = {
   "2d3r4t": {
     id: "2d3r4t",
     email: "user@example.com", 
-    password: "purple-monkey-dinosaur"
+    password: "1234"
   },
 };
 
@@ -31,17 +31,17 @@ const generateRandomString = function() {
   return id;
 };
 
-const getUserByEmail = function(usersObj, submittedEmail) {
-  let foundEmail = null;
+const getUserByEmail = function(submittedEmail) {
+  let foundUser = null;
 
-  for (let userID in usersObj) {
+  for (let userID in users) {
     const email = users[userID].email;
     if (email === submittedEmail) {
-      foundEmail = email;
+      foundUser = users[userID];
     }
   }
 
-  return foundEmail;
+  return foundUser;
 }
 
 app.get("/", (req, res) => {
@@ -110,13 +110,32 @@ app.get("/login", (req, res) => {
 });
 
 app.post("/login", (req, res) => {
-  res.cookie('user_id', '2d3r4t' );
+  const submittedEmail = req.body.email;
+  const submittedPassword = req.body.password;
+
+  if (!submittedEmail || !submittedPassword) {
+    return res.status(400).send('Please provide email and password');
+  }
+
+  let foundUser = getUserByEmail(submittedEmail);
+  console.log(foundUser);
+  if(!foundUser) {
+    return res.status(400).send(`Email is not registered`);
+  }
+
+  let userID = foundUser.id;
+  let userPassword = foundUser.password;
+
+  if (userPassword !== submittedPassword) {
+    return res.status(400).send(`Password is incorrect`);
+  }
+  res.cookie('user_id', userID );
   res.redirect("/urls");
 });
 
 app.post("/logout", (req, res) => {
-  res.clearCookie('email');
-  res.redirect("/urls");
+  res.clearCookie('user_id');
+  res.redirect("/login");
 });
 
 app.get("/register", (req, res) => {
@@ -127,13 +146,17 @@ app.get("/register", (req, res) => {
 });
 
 app.post("/register", (req, res) => {
-  if (!req.body.email.length || !req.body.password.length) {
+  const submittedEmail = req.body.email;
+  const submittedPassword = req.body.password;
+
+  if (!submittedEmail || !submittedPassword) {
     return res.status(400).send('Please provide email and password');
   }
 
-  let foundEmail = getUserByEmail(users, req.body.email);
+  let foundEmail = getUserByEmail(submittedEmail);
+  console.log(foundEmail);
   if(foundEmail) {
-    return res.status(400).send(`${foundEmail} has already been registered`);
+    return res.status(400).send(`${foundEmail.email} has already been registered`);
   }
 
   const id = generateRandomString();
