@@ -1,7 +1,8 @@
 const express = require("express");
 const cookieParser = require("cookie-parser");
+const bcrypt = require("bcryptjs");
 const app = express();
-const PORT = 8080; // default port 8080
+const PORT = 8080;
 
 //
 // middleware
@@ -28,7 +29,7 @@ const users = {
   "2d3r4t": {
     id: "2d3r4t",
     email: "user@example.com", 
-    password: "1234"
+    encryptedPassword: "1234"
   },
 };
 
@@ -82,12 +83,12 @@ app.get("/", (req, res) => {
 
 app.get("/urls", (req, res) => {
   if (!req.cookies["user_id"]) {
-    return res.status(400).send('Please login');
+    return res.status(401).send('Please login');
   }
   
-  // commenting out for now because it covers all not logged in states
+  // keep a close eye on this
   if (!users[req.cookies["user_id"]]) {
-    return res.status(400).send('Error'); // TODO: update error message 
+    return res.status(401).send('Login required');
   }
 
   const userUrls = getUrlsForUser(req.cookies["user_id"]);
@@ -101,7 +102,7 @@ app.get("/urls", (req, res) => {
 
 app.post("/urls", (req, res) => {
   if (!req.cookies["user_id"]) {
-    return res.status(400).send(`Sign in to create new URLs`);
+    return res.status(401).send(`Sign in to create new URLs`);
   }
 
   const id = generateRandomString();
@@ -121,15 +122,15 @@ app.get("/urls/new", (req, res) => {
 
 app.get("/urls/:id", (req, res) => {
   if (!req.cookies["user_id"]) {
-    return res.status(400).send(`Sign in to view URLs`);
+    return res.status(401).send(`Sign in to view URLs`);
   }
 
   if (!urlDatabase[req.params.id]) {
-    return res.status(400).send('Short URL id does not exist');
+    return res.status(404).send('Short URL id does not exist');
   }
 
   if (req.cookies["user_id"] !== urlDatabase[req.params.id].userID) {
-    return res.status(400).send(`Requested URL not in your catalog`);
+    return res.status(403).send(`Requested URL not in your catalog`);
   }
 
   const userUrls = getUrlsForUser(req.cookies["user_id"])
@@ -145,15 +146,15 @@ app.get("/urls/:id", (req, res) => {
 
 app.post("/urls/:id", (req, res) => {
   if (!urlDatabase[req.params.id]) {
-    return res.status(400).send('Cannot access non-existant file');
+    return res.status(404).send('Cannot access non-existant file');
   }
 
   if (!req.cookies["user_id"]) {
-    return res.status(400).send('Please login before accessing');
+    return res.status(401).send('Please login before accessing');
   }
 
   if (req.cookies["user_id"] !== urlDatabase[req.params.id].userID) {
-    return res.status(400).send(`Requested URL not in your catalog`);
+    return res.status(403).send(`Requested URL not in your catalog`);
   }
   urlDatabase[req.params.id] = {
     longURL: req.body.longURL,
@@ -164,15 +165,15 @@ app.post("/urls/:id", (req, res) => {
 
 app.post("/urls/:id/delete", (req, res) => {
   if (!urlDatabase[req.params.id]) {
-    return res.status(400).send('Cannot delete non-existant file');
+    return res.status(404).send('Cannot delete non-existant file');
   }
 
   if (!req.cookies["user_id"]) {
-    return res.status(400).send('Please login before deleting');
+    return res.status(401).send('Please login before deleting');
   }
 
   if (req.cookies["user_id"] !== urlDatabase[req.params.id].userID) {
-    return res.status(400).send(`Requested URL not in your catalog`);
+    return res.status(403).send(`Requested URL not in your catalog`);
   }
 
   delete urlDatabase[req.params.id];
@@ -181,7 +182,7 @@ app.post("/urls/:id/delete", (req, res) => {
 
 app.get("/u/:id", (req, res) => {
   if (!urlDatabase[req.params.id]) {
-    return res.status(400).send('Short URL does not exist in database');
+    return res.status(404).send('Short URL does not exist in database');
   }
  
   const longURL = urlDatabase[req.params.id].longURL;
@@ -204,20 +205,21 @@ app.post("/login", (req, res) => {
   const submittedPassword = req.body.password;
 
   if (!submittedEmail || !submittedPassword) {
-    return res.status(400).send('Please provide email and password');
+    return res.status(401).send('Please provide email and password');
   }
 
   let foundUser = getUserByEmail(submittedEmail);
   if(!foundUser) {
-    return res.status(400).send(`Email is not registered`);
+    return res.status(404).send(`Email is not registered`);
   }
 
   let userID = foundUser.id;
-  let userPassword = foundUser.password;
+  let doesPasswordCheck = bcrypt.compareSync(submittedPassword, foundUser.encryptedPassword);
 
-  if (userPassword !== submittedPassword) {
-    return res.status(400).send(`Password is incorrect`);
+  if (!doesPasswordCheck) {
+    return res.status(403).send(`Password is incorrect`);
   }
+
   res.cookie('user_id', userID );
   res.redirect("/urls");
 });
@@ -239,23 +241,24 @@ app.get("/register", (req, res) => {
 
 app.post("/register", (req, res) => {
   const submittedEmail = req.body.email;
-  const submittedPassword = req.body.password;
-
-  if (!submittedEmail || !submittedPassword) {
-    return res.status(400).send('Please provide email and password');
+  
+  if (!submittedEmail || !req.body.password) {
+    return res.status(401).send('Please provide email and password');
   }
-
+  
   let foundEmail = getUserByEmail(submittedEmail);
   if(foundEmail) {
-    return res.status(400).send(`${foundEmail.email} has already been registered`);
+    return res.status(409).send(`${foundEmail.email} has already been registered`);
   }
-
+  
+  const hashedPassword = bcrypt.hashSync(req.body.password, 10);
   const id = generateRandomString();
   users[id] = {
     id,
-    email: req.body.email,
-    password: req.body.password
+    email: submittedEmail,
+    encryptedPassword: hashedPassword
   }
+  // console.log(users[id]);
   res.cookie('user_id', id);
   res.redirect("/urls");
 });
