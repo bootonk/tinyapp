@@ -14,7 +14,7 @@ const urlDatabase = {
   },
   "9sm5xK": {
     longURL: "http://www.google.com", 
-    userID: "2d3r4t"
+    userID: undefined
   }
 };
 
@@ -50,6 +50,15 @@ const getUserByEmail = function(submittedEmail) {
   return foundUser;
 }
 
+const urlsForUser = function(id, pageTempateVariables) {
+  for (let url in urlDatabase) {
+    if (urlDatabase[url].userID === id) {
+      pageTempateVariables.urlsForUser.push(url)  
+    }
+  }
+  return pageTempateVariables.urlsForUser;
+};
+
 app.get("/", (req, res) => {
   res.send("Hello!");
 });
@@ -68,17 +77,9 @@ app.get("/urls", (req, res) => {
     user: users[req.cookies["user_id"]],
     urlsForUser: []
   };
-console.log(templateVars.user);
+// console.log(templateVars.user);
   if (templateVars.user) {
-    const urlsForUser = function(id) {
-      for (let url in urlDatabase) {
-        if (urlDatabase[url].userID === id) {
-          templateVars.urlsForUser.push(url)  
-        }
-      }
-    };
-  
-    urlsForUser(templateVars.user.id);
+    urlsForUser(templateVars.user.id, templateVars);
   }
 
   res.render("urls_index", templateVars, console.log(templateVars));
@@ -96,8 +97,7 @@ app.post("/urls", (req, res) => {
     longURL: req.body.longURL,
     userID: templateVars.user.id
   }
-  // urlDatabase[id].longURL = req.body.longURL;
-  // console.log(urlDatabase[id].longURL);
+  
   res.redirect("/urls/" + id);
 });
 
@@ -111,15 +111,38 @@ app.get("/urls/new", (req, res) => {
 
 app.get("/urls/:id", (req, res) => {
   const templateVars = { 
+    urls: urlDatabase,
     id: req.params.id, 
     longURL: urlDatabase[req.params.id].longURL,
-    user: users[req.cookies["user_id"]]
+    user: users[req.cookies["user_id"]], 
+    urlsForUser: []
   }
-  res.render("urls_show", templateVars);
+
+  if (!templateVars.user) {
+    return res.status(400).send(`Sign in to view URLs`);
+  }
+
+  if (templateVars.user.id === urlDatabase[req.params.id].userID) {
+    let validUrls = urlsForUser(templateVars.user.id, templateVars);
+    console.log(validUrls);
+    res.render("urls_show", templateVars);
+  } else {
+    return res.status(400).send(`Requested URL not in your catalog`);
+  }
 });
 
 app.post("/urls/:id", (req, res) => {
-  urlDatabase[req.params.id].longURL = req.body.longURL;
+  // urlDatabase[req.params.id].longURL = req.body.longURL;
+  const templateVars = {
+    urls: urlDatabase, 
+    user: users[req.cookies["user_id"]],
+    urlsForUser: []
+  };
+
+  urlDatabase[req.params.id] = {
+    longURL: req.body.longURL,
+    userID: req.cookies["user_id"].id
+  }
   res.redirect("/urls");
 });
 
