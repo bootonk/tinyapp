@@ -5,6 +5,11 @@ const app = express();
 const PORT = 8080;
 
 //
+// require function
+//
+const { generateRandomString, getUserByEmail, getUrlsForUser } = require('./helpers');
+
+//
 // middleware
 //
 app.set('view engine', 'ejs');
@@ -37,43 +42,6 @@ const users = {
 };
 
 //
-// functions
-//
-const generateRandomString = function() {
-  let id = '';
-  const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-  
-  for (let i = 0; i < 6; i++) {
-    id += characters.charAt(Math.floor(Math.random() * characters.length));
-  }
-
-  return id;
-};
-
-const getUserByEmail = function(submittedEmail) {
-  let foundUser = null;
-
-  for (let userID in users) {
-    const email = users[userID].email;
-    if (email === submittedEmail) {
-      foundUser = users[userID];
-    }
-  }
-
-  return foundUser;
-}
-
-const getUrlsForUser = function(id) {
-  const urlsForUserArr = [];
-  for (let url in urlDatabase) {
-    if (urlDatabase[url].userID === id) {
-      urlsForUserArr.push(url)  
-    }
-  }
-  return urlsForUserArr;
-};
-
-//
 // routes
 //
 app.get("/", (req, res) => {
@@ -94,7 +62,7 @@ app.get("/urls", (req, res) => {
   //   return res.status(401).send('Login required');
   // }
 
-  const userUrls = getUrlsForUser(req.session.user_id);
+  const userUrls = getUrlsForUser(req.session.user_id, urlDatabase);
 
   res.render("urls_index", {
     urls: urlDatabase, 
@@ -136,7 +104,7 @@ app.get("/urls/:id", (req, res) => {
     return res.status(403).send(`Requested URL not in your catalog`);
   }
 
-  const userUrls = getUrlsForUser(req.session.user_id)
+  const userUrls = getUrlsForUser(req.session.user_id, urlDatabase)
   
   res.render("urls_show", { 
     urls: urlDatabase,
@@ -211,7 +179,7 @@ app.post("/login", (req, res) => {
     return res.status(401).send('Please provide email and password');
   }
 
-  let foundUser = getUserByEmail(submittedEmail);
+  let foundUser = getUserByEmail(submittedEmail, users);
   if(!foundUser) {
     return res.status(404).send(`Email is not registered`);
   }
@@ -249,7 +217,7 @@ app.post("/register", (req, res) => {
     return res.status(401).send('Please provide email and password');
   }
   
-  let foundEmail = getUserByEmail(submittedEmail);
+  let foundEmail = getUserByEmail(submittedEmail, users);
   if(foundEmail) {
     return res.status(409).send(`${foundEmail.email} has already been registered`);
   }
