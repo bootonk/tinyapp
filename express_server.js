@@ -53,11 +53,6 @@ app.get("/urls", (req, res) => {
   if (!req.session.user_id) {
     return res.status(401).send("Please login");
   }
-  
-  // // keep a close eye on this
-  // if (!users[req.session.user_id]) {
-  //   return res.status(401).send('Login required');
-  // }
 
   const userUrls = getUrlsForUser(req.session.user_id, urlDatabase);
 
@@ -229,7 +224,7 @@ app.post("/register", (req, res) => {
     email: submittedEmail,
     encryptedPassword: hashedPassword
   };
-  console.log(hashedPassword);
+  
   req.session.user_id = id;
   res.redirect("/urls");
 });
