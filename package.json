@@ -1,7 +1,7 @@
 {
   "name": "tinyapp",
   "version": "1.0.0",
-  "description": "",
+  "description": "learning servers, routes, and templates with a url shortener app",
   "main": "index.js",
   "scripts": {
     "test": "mocha",

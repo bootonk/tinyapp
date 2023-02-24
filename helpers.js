@@ -1,6 +1,3 @@
-//
-// functions
-//
 const generateRandomString = function() {
   let id = '';
   const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
@@ -22,17 +19,16 @@ const getUserByEmail = function(submittedEmail, database) {
   }
 
   return foundUser;
-}
-
-const getUrlsForUser = function(id, database) {
-  const urlsForUserArr = [];
-  for (let url in database) {
-    if (database[url].userID === id) {
-      urlsForUserArr.push(url)  
-    }
-  }
-  return urlsForUserArr;
 };
 
+const getUrlsForUser = function(id, database) {
+  const userUrlsArr = [];
+  for (let url in database) {
+    if (database[url].userID === id) {
+      userUrlsArr.push(url);
+    }
+  }
+  return userUrlsArr;
+};
 
-module.exports = { generateRandomString, getUserByEmail, getUrlsForUser};
+module.exports = { generateRandomString, getUserByEmail, getUrlsForUser };

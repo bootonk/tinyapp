@@ -1,15 +1,15 @@
 const { assert } = require('chai');
-const { getUserByEmail, getUrlsForUser } = require('../helpers.js');
+const { getUserByEmail, getUrlsForUser, isValidHTTPUrl } = require('../helpers.js');
 
 const testUsers = {
   "userRandomID": {
-    id: "userRandomID", 
-    email: "user@example.com", 
+    id: "userRandomID",
+    email: "user@example.com",
     password: "purple-monkey-dinosaur"
   },
   "user2RandomID": {
-    id: "user2RandomID", 
-    email: "user2@example.com", 
+    id: "user2RandomID",
+    email: "user2@example.com",
     password: "dishwasher-funk"
   }
 };
@@ -20,7 +20,7 @@ const testUrlDatabase = {
     userID: "userRandomID"
   },
   "9sm5xK": {
-    longURL: "http://www.google.com", 
+    longURL: "http://www.google.com",
     userID: undefined
   }
 };
@@ -45,7 +45,7 @@ describe('getUrlsForUser', function() {
     assert.deepEqual(userUrls, expectedUrls);
   });
 
-  it('should not return a URL if it has been created by someone else', function () {
+  it('should not return a URL if it has been created by someone else', function() {
     const userUrls = getUrlsForUser("userRandomID", testUrlDatabase);
     const expectedFailUrls = ["9sm5xK"];
     assert.notDeepEqual(userUrls, expectedFailUrls);
